@@ -1,0 +1,247 @@
+/* Exams Planner — όλα τα στυλ περιορίζονται μέσα στο .dgn-app,
+   ώστε να μην επηρεάζουν το θέμα της ιστοσελίδας και να μην επηρεάζονται πολύ από αυτό. */
+.dgn-app {
+  --dgn-ink: #18282d;
+  --dgn-muted: #5d6f74;
+  --dgn-line: #d3dddf;
+  --dgn-surface: #ffffff;
+  --dgn-soft: #f3f6f6;
+  --dgn-accent: #1d6a84;
+  --dgn-accent-ink: #ffffff;
+  --dgn-accent-soft: #e1eff3;
+  --dgn-full: #b0661b;
+  --dgn-full-soft: #f5e6d3;
+  --dgn-off: #e7ebeb;
+  --dgn-danger: #b3372f;
+  --dgn-ok: #2d7a4b;
+  color: var(--dgn-ink);
+  font-size: 15px;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 100%;
+  padding-top: 12px; /* λίγος αέρας κάτω από τον τίτλο της σελίδας (μαζί με το κενό του θέματος ≈ 30px) */
+}
+.dgn-app *, .dgn-app *::before, .dgn-app *::after { box-sizing: border-box; }
+.dgn-app p { margin: 0; }
+/* Κεφαλίδα: κανόνας αριστερά (μόνο για καθηγητές), κουμπί εισόδου/εξόδου δεξιά */
+.dgn-app .dgn-head { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.dgn-app .dgn-head:empty, .dgn-app .dgn-head .dgn-rule[hidden] { display: none; }
+/* Κουμπί εισόδου/εξόδου: στο τέλος, στο κέντρο */
+.dgn-app .dgn-auth { display: flex !important; justify-content: center !important; text-align: center !important; width: 100%; padding-block: 16px 0; }
+.dgn-app .dgn-auth > .dgn-authbtn { margin: 0 auto !important; float: none !important; }
+.dgn-app .dgn-auth:empty { display: none; }
+.dgn-app a.dgn-authbtn, .dgn-app button.dgn-authbtn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 1px solid var(--dgn-accent);
+  border-radius: 8px; background: var(--dgn-surface); color: var(--dgn-accent); font-size: 14px; font-weight: 600;
+  text-decoration: none; line-height: 1.2;
+}
+.dgn-app a.dgn-authbtn:hover, .dgn-app button.dgn-authbtn:hover { background: var(--dgn-accent-soft); }
+.dgn-app .dgn-top:empty, .dgn-app .dgn-foot:empty { display: none; }
+
+/* Σελίδα εισόδου (?dgn=login) */
+.dgn-app.dgn-loginview { align-items: center; padding-block: 8px 32px; }
+.dgn-app .dgn-loginpage {
+  width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 14px;
+  background: var(--dgn-soft); border: 1px solid var(--dgn-line); border-radius: 12px; padding: 24px;
+}
+.dgn-app .dgn-loginpage h2 { margin: 0; font-size: 22px; line-height: 1.2; }
+.dgn-app .dgn-loginpage .dgn-primary { width: 100%; }
+.dgn-app .dgn-check { flex-direction: row; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--dgn-ink); font-weight: 500; cursor: pointer; }
+.dgn-app .dgn-check input { width: 18px; height: 18px; min-width: 18px; margin: 2px 0 0; padding: 0; accent-color: var(--dgn-accent); }
+.dgn-app .dgn-check span { display: flex; flex-direction: column; gap: 2px; }
+.dgn-app .dgn-check small { font-size: 12px; font-weight: 400; color: var(--dgn-muted); }
+.dgn-app .dgn-back { font-size: 14px; color: var(--dgn-accent); text-align: center; }
+.dgn-app .dgn-vh { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; border: 0 !important; }
+.dgn-app .dgn-rule { color: var(--dgn-muted); font-size: 14px; }
+.dgn-app .dgn-rule strong { color: var(--dgn-ink); }
+.dgn-app .dgn-rule-grid { display: inline-grid; grid-template-columns: auto auto; column-gap: 6px; text-align: left; max-width: 100%; }
+
+.dgn-app button { font: inherit; cursor: pointer; border-radius: 8px; line-height: 1.2; text-transform: none; letter-spacing: 0; box-shadow: none; }
+.dgn-app button:focus-visible, .dgn-app select:focus-visible, .dgn-app input:focus-visible, .dgn-app a:focus-visible { outline: 2px solid var(--dgn-accent); outline-offset: 2px; }
+.dgn-app .dgn-primary { background: var(--dgn-accent); color: var(--dgn-accent-ink); border: 0; padding: 10px 18px; font-weight: 600; min-height: 42px; }
+.dgn-app .dgn-primary:hover { filter: brightness(1.08); }
+.dgn-app .dgn-primary:disabled { opacity: .55; cursor: not-allowed; }
+.dgn-app .dgn-ghost { background: var(--dgn-surface); border: 1px solid var(--dgn-line); color: var(--dgn-ink); padding: 6px 12px; }
+.dgn-app .dgn-danger { background: var(--dgn-danger); color: #fff; border: 0; padding: 7px 12px; font-weight: 600; }
+
+.dgn-app .dgn-form, .dgn-app .dgn-login {
+  background: var(--dgn-soft); border: 1px solid var(--dgn-line); border-radius: 12px; padding: 16px;
+}
+.dgn-app .dgn-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end; }
+.dgn-app .dgn-login { display: flex; flex-direction: column; gap: 8px; max-width: 460px; }
+.dgn-app .dgn-hint { font-size: 13px; color: var(--dgn-muted); }
+.dgn-app label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--dgn-muted); min-width: 0; margin: 0; }
+.dgn-app input.dgn-readonly { background: var(--dgn-soft) !important; font-weight: 600; cursor: default; }
+.dgn-app select, .dgn-app input {
+  font: inherit; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--dgn-ink);
+  background: var(--dgn-surface); border: 1px solid var(--dgn-line); border-radius: 8px;
+  padding: 8px 10px; width: 100%; min-width: 0; height: 42px; margin: 0; box-shadow: none;
+}
+.dgn-app .dgn-msg { font-size: 14px; }
+/* Ο χώρος μηνυμάτων εμφανίζεται μόνο όταν υπάρχει μήνυμα (αλλιώς δημιουργεί κενό κάτω από τον τίτλο). */
+.dgn-app .dgn-msg:empty, .dgn-app .dgn-head[hidden] { display: none; }
+.dgn-app .dgn-msg.dgn-err { color: var(--dgn-danger); font-weight: 600; }
+.dgn-app .dgn-msg.dgn-ok { color: var(--dgn-ok); font-weight: 600; }
+
+/* Πλαίσιο λεπτομερειών (καθηγητές): κολλημένο στο κάτω μέρος της οθόνης, ώστε να φαίνεται όπου κι αν έχει κυλήσει η σελίδα. */
+.dgn-app .dgn-detail {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 99999;
+  width: min(560px, calc(100% - 24px)); box-sizing: border-box;
+  background: var(--dgn-surface); border: 1px solid var(--dgn-line); border-left: 4px solid var(--dgn-accent); border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(24, 40, 45, .18); padding: 12px 14px;
+  display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; font-size: 14px;
+}
+.dgn-app .dgn-detail p { margin: 0; }
+.dgn-app .dgn-detail[hidden] { display: none; }
+.dgn-app .dgn-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.dgn-app .dgn-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.dgn-app .dgn-monthbar { display: flex; align-items: center; gap: 8px; }
+.dgn-app .dgn-month { margin: 0; font-size: 20px; font-weight: 600; min-width: 9em; text-align: center; }
+.dgn-app .dgn-nav { border: 1px solid var(--dgn-line); background: var(--dgn-surface); color: var(--dgn-ink); width: 38px; height: 38px; padding: 0; font-size: 20px; }
+.dgn-app .dgn-nav:hover { border-color: var(--dgn-accent); }
+.dgn-app .dgn-nav:disabled { opacity: .35; cursor: default; border-color: var(--dgn-line); }
+.dgn-app .dgn-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--dgn-muted); }
+.dgn-app .dgn-legend[hidden] { display: none; }
+.dgn-app .dgn-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dgn-app .dgn-sw { width: 25px; height: 16px; border-radius: 3px; border: 1px solid var(--dgn-line); display: inline-block; }
+.dgn-app .dgn-sw-mine { background: var(--dgn-accent); border-color: var(--dgn-accent); position: relative; }
+.dgn-app .dgn-sw-mine::after { content: ""; position: absolute; top: 0; right: 3px; width: 5px; height: 8px; background: #fff; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
+.dgn-app .dgn-sw-full { background: repeating-linear-gradient(135deg, var(--dgn-full-soft) 0 6px, var(--dgn-surface) 6px 12px); }
+.dgn-app .dgn-sw-soon { background: repeating-linear-gradient(135deg, #dfe5e6 0 2px, #f7f9f9 2px 8px); }
+.dgn-app .dgn-legend span[hidden] { display: none; }
+
+.dgn-app .dgn-filter { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+/* Υπόδειξη «▲ Επιλέξτε το τμήμα σας» (μόνο επισκέπτες, μόνο με «Όλα τα τμήματα»). */
+.dgn-app .dgn-filter-hint { font-size: 11px; line-height: 1.2; color: var(--dgn-full); font-weight: 600; }
+.dgn-app .dgn-filter-hint[hidden] { display: none; }
+/* Βελάκι προς το μενού: στο κινητό η υπόδειξη είναι από κάτω (▲)· στον υπολογιστή αριστερά, στην ίδια γραμμή (▸). */
+.dgn-app .dgn-view.dgn-stacked .dgn-filter-hint::before { content: "▲ "; }
+.dgn-app .dgn-view:not(.dgn-stacked) .dgn-filter { flex-direction: row; gap: 8px; }
+.dgn-app .dgn-view:not(.dgn-stacked) .dgn-filter-hint { order: -1; white-space: nowrap; }
+.dgn-app .dgn-view:not(.dgn-stacked) .dgn-filter-hint::after { content: " ▸"; }
+.dgn-app .dgn-filter select { width: auto; min-width: 180px; font-weight: 600; height: 38px; padding: 6px 10px; }
+.dgn-app .dgn-upcoming { background: var(--dgn-soft); border: 1px solid var(--dgn-line); border-radius: 12px; padding: 14px 16px; }
+.dgn-app .dgn-upcoming[hidden] { display: none; }
+.dgn-app .dgn-upcoming h4 { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+.dgn-app .dgn-upcoming ul { list-style: none !important; margin: 0 !important; padding: 0 !important; display: flex; flex-direction: column; }
+.dgn-app .dgn-upcoming li { display: flex; flex-wrap: wrap; gap: 0 12px; padding: 7px 0 !important; margin: 0 !important; border-top: 1px solid var(--dgn-line); }
+.dgn-app .dgn-upcoming li:first-child { border-top: 0; }
+.dgn-app .dgn-up-date { font-weight: 700; min-width: 5.2em; font-variant-numeric: tabular-nums; }
+/* Πίνακας ενός τμήματος: χωρά στο κινητό, με πλήρη ονόματα μαθημάτων */
+.dgn-app table.dgn-grid.dgn-single { min-width: 0; }
+.dgn-app table.dgn-grid.dgn-single td.dgn-c > button { justify-content: flex-start; padding: 0 12px; font-size: 13px; text-align: left; }
+.dgn-app .dgn-tablebox { overflow-x: auto; border: 1px solid var(--dgn-line); border-radius: 12px; background: var(--dgn-surface); }
+.dgn-app .dgn-empty { padding: 24px 16px; color: var(--dgn-muted); }
+.dgn-app table.dgn-grid { border-collapse: collapse; width: 100%; min-width: 760px; margin: 0; border: 0; font-variant-numeric: tabular-nums; table-layout: auto; }
+.dgn-app .dgn-grid th, .dgn-app .dgn-grid td { border: 0; border-bottom: 1px solid var(--dgn-line); padding: 0; text-align: center; font-size: 13px; background: none; vertical-align: middle; }
+.dgn-app .dgn-grid thead th { font-size: 11px; letter-spacing: .06em; color: var(--dgn-muted); font-weight: 600; padding: 10px 2px; background: var(--dgn-soft); }
+.dgn-app .dgn-grid thead th.dgn-clsh { color: var(--dgn-ink); font-size: 14px; letter-spacing: 0; }
+.dgn-app .dgn-grid .dgn-dayh { text-align: left; padding-left: 10px; }
+.dgn-app .dgn-grid .dgn-wk { font-size: 12px; color: var(--dgn-muted); font-weight: 600; border-right: 1px solid var(--dgn-line); width: 40px; background: var(--dgn-soft); }
+.dgn-app .dgn-grid .dgn-day { text-align: left; padding: 0 10px; white-space: nowrap; border-right: 1px solid var(--dgn-line); width: 92px; font-weight: 400; }
+.dgn-app .dgn-grid .dgn-day b { display: inline-block; width: 2.4em; font-weight: 600; }
+/* Σημερινή ημέρα: μπλε έντονα γράμματα και πορτοκαλί γραμμή αριστερά. */
+.dgn-app .dgn-grid th.dgn-day.dgn-today { box-shadow: inset 4px 0 0 #e67e22; }
+.dgn-app .dgn-grid th.dgn-day.dgn-today, .dgn-app .dgn-grid th.dgn-day.dgn-today b { color: var(--dgn-accent); font-weight: 700; }
+/* Μέρες άλλου μήνα: μόνο η στήλη ημερομηνίας γκρι (κείμενο + φόντο)· τα κελιά και τα διαγωνίσματα μένουν κανονικά. */
+.dgn-app .dgn-grid .dgn-outday { background: var(--dgn-soft); }
+.dgn-app .dgn-grid .dgn-outday, .dgn-app .dgn-grid .dgn-outday b { color: #97a4a8; }
+.dgn-app .dgn-grid tr.dgn-weekend > * { border-bottom: 2px solid var(--dgn-ink); }
+.dgn-app .dgn-grid td.dgn-c { height: 36px; min-width: 46px; border-left: 1px solid var(--dgn-line); }
+.dgn-app .dgn-grid td.dgn-c > button, .dgn-app .dgn-grid td.dgn-c > span {
+  display: flex; align-items: center; justify-content: center; width: 100%; height: 36px; margin: 0;
+  padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; font-size: 12px; font-weight: 700; min-height: 0;
+}
+.dgn-app .dgn-grid td.dgn-c > button:focus-visible { outline-offset: -2px; }
+.dgn-app .dgn-grid td.dgn-c > button.dgn-ro { cursor: default; }
+.dgn-app .dgn-grid td.dgn-free > button:hover { background: var(--dgn-accent-soft); }
+.dgn-app .dgn-grid td.dgn-free > button:hover::after { content: "+"; color: var(--dgn-accent); font-size: 18px; font-weight: 400; }
+.dgn-app .dgn-grid td.dgn-taken > button { background: var(--dgn-accent); color: var(--dgn-accent-ink); }
+/* Περασμένα διαγωνίσματα: πιο αχνά (η σημερινή ημέρα μένει κανονική). */
+.dgn-app .dgn-grid td.dgn-taken.dgn-past > button { opacity: .6; }
+/* «Δική σας δήλωση»: λευκός σελιδοδείκτης πάνω δεξιά (στο κελί, ώστε να μην κρύβει το περίγραμμα επιλογής). */
+.dgn-app .dgn-grid td.dgn-mine { position: relative; }
+.dgn-app .dgn-grid td.dgn-mine::after { content: ""; position: absolute; top: 0; right: 4px; width: 6px; height: 9px; background: #fff; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); pointer-events: none; }
+.dgn-app .dgn-grid td.dgn-full { background: repeating-linear-gradient(135deg, var(--dgn-full-soft) 0 6px, var(--dgn-surface) 6px 12px); }
+/* Καθηγητές: μελλοντικές μέρες που δεν δηλώνονται ακόμα (προθεσμία) — λεπτή γκρι διαγράμμιση. */
+.dgn-app .dgn-grid td.dgn-soon { background: repeating-linear-gradient(135deg, #dfe5e6 0 2px, #f7f9f9 2px 8px); }
+.dgn-app .dgn-grid td.dgn-off { background: var(--dgn-off); color: var(--dgn-muted); font-size: 12px; letter-spacing: .04em; height: 36px; border-left: 1px solid var(--dgn-line); text-align: left; padding-left: 14px; }
+.dgn-app .dgn-grid td.dgn-sel { outline: 3px solid var(--dgn-full); outline-offset: -3px; }
+.dgn-app .dgn-foot { font-size: 14px; color: var(--dgn-muted); }
+.dgn-app .dgn-foot ul.dgn-tips { margin: 0 !important; padding: 0 0 0 1.25em !important; list-style: disc outside !important; display: flex; flex-direction: column; gap: 4px; }
+.dgn-app .dgn-foot ul.dgn-tips li { margin: 0 !important; padding: 0 !important; list-style: inherit !important; }
+.dgn-app .dgn-foot ul.dgn-tips li::marker { color: var(--dgn-muted); }
+.dgn-app .dgn-loading { color: var(--dgn-muted); }
+
+@media (max-width: 600px) {
+  .dgn-app .dgn-form { grid-template-columns: 1fr 1fr; }
+  .dgn-app .dgn-form .dgn-primary { grid-column: 1 / -1; }
+  .dgn-app .dgn-month { min-width: 0; font-size: 18px; }
+}
+/* Κινητά/στενές οθόνες (.dgn-stacked, ορίζεται από το app.js):
+   τμήμα → επόμενα διαγωνίσματα → ‹ μήνας › → υπόμνημα → πίνακας, όλα κεντραρισμένα. */
+.dgn-app .dgn-view { display: flex; flex-direction: column; gap: 16px; }
+.dgn-app .dgn-view.dgn-stacked { gap: 0; align-items: center; }
+.dgn-app .dgn-view.dgn-stacked .dgn-bar { display: contents; }
+/* Κουμπί «Εμφάνιση/Απόκρυψη ημερολογίου» (μόνο επισκέπτες με επιλεγμένο τμήμα) */
+.dgn-app button.dgn-calbtn {
+  align-self: center; display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 8px 16px;
+  border: 0; border-radius: 999px; background: var(--dgn-accent-soft); color: var(--dgn-accent);
+  font: inherit; font-size: 14px; font-weight: 600; line-height: 1.2; cursor: pointer; text-transform: none; letter-spacing: normal;
+}
+.dgn-app button.dgn-calbtn:hover { background: #cfe5ec; color: var(--dgn-accent); }
+.dgn-app button.dgn-calbtn .dgn-chev { font-size: 11px; }
+.dgn-app button.dgn-calbtn[hidden], .dgn-app .dgn-monthbar[hidden], .dgn-app .dgn-tablebox[hidden] { display: none; }
+.dgn-app .dgn-view.dgn-stacked .dgn-filter { order: 1; justify-content: center; }
+.dgn-app .dgn-view.dgn-stacked .dgn-upcoming { order: 2; align-self: stretch; margin-top: 16px; }
+.dgn-app .dgn-view.dgn-stacked .dgn-calbtn { order: 3; margin-top: 16px; }
+.dgn-app .dgn-view.dgn-stacked .dgn-monthbar { order: 4; justify-content: center; margin-top: 24px; }
+.dgn-app .dgn-view.dgn-stacked .dgn-legend { order: 5; justify-content: center; margin-top: 12px; margin-bottom: 12px; }
+@media (prefers-reduced-motion: no-preference) {
+  .dgn-app .dgn-grid td.dgn-c > button { transition: background-color .15s; }
+}
+
+/* Τίτλος σελίδας στο κέντρο (μόνο σελίδες με [examsplanner]).
+   Με !important, γιατί πολλά θέματα αλλάζουν τη στοίχιση του τίτλου στα κινητά. */
+body.dgn-page h1.wp-block-post-title,
+body.dgn-page h1.entry-title,
+body.dgn-page h1.page-title,
+body.dgn-page .entry-header h1,
+body.dgn-page h1.dgn-centered-title {
+  text-align: center !important;
+  float: none !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+@media (max-width: 782px) {
+  body.dgn-page h1.wp-block-post-title,
+  body.dgn-page h1.entry-title,
+  body.dgn-page h1.page-title,
+  body.dgn-page .entry-header h1,
+  body.dgn-page h1.dgn-centered-title { margin-top: 30px !important; }
+}
+
+/* Υποσέλιδο «Δημιουργία: … · vX». Ανεξάρτητη κλάση με !important (βρίσκεται έξω από το .dgn-app).
+   Μέσα στο <article> της σελίδας κάθεται απόλυτα στην κάτω δεξιά γωνία, ώστε να μην προσθέτει κενό.
+   Χωρίς <article> (άλλο θέμα) μένει στη ροή, δεξιά, χωρίς περιθώριο. Χρώμα = --dgn-muted. */
+.dgn-credit {
+  font-size: 10px !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: right !important;
+  color: #5d6f74 !important;
+}
+.dgn-credit-host { position: relative !important; }
+.dgn-credit.dgn-credit-corner {
+  position: absolute !important;
+  right: 12px !important;
+  bottom: 6px !important;
+  white-space: nowrap;
+}
