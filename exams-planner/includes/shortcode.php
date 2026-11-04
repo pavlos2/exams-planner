@@ -32,6 +32,39 @@ add_filter( 'body_class', function ( $classes ) {
 	return $classes;
 } );
 
+/**
+ * Οι δηλώσεις του μήνα που ανοίγει πρώτος, μέσα στη σελίδα, ώστε ο πίνακας να εμφανίζεται αμέσως γεμάτος
+ * (χωρίς να περιμένει το αίτημα REST). Μόνο ό,τι βλέπει και ο επισκέπτης: χωρίς ονόματα καθηγητών.
+ * Το ίδιο εύρος με το monthRange() του app.js: από τη Δευτέρα της 1ης έως την Παρασκευή της τελευταίας εβδομάδας.
+ * Ονόματα, «δικές μου» και τυχόν νεότερες αλλαγές έρχονται αμέσως μετά από το κανονικό αίτημα REST.
+ */
+function dgn_preload_month( $s ) {
+	if ( ! $s['public_view'] ) {
+		return null; // ο πίνακας είναι μόνο για καθηγητές: τίποτα μέσα στη σελίδα
+	}
+	list( $sy_start, $sy_end ) = dgn_school_year();
+	$today = dgn_today();
+	$view  = $today < $sy_start ? $sy_start : ( $today > $sy_end ? $sy_end : $today );
+	$first = new DateTimeImmutable( substr( $view, 0, 8 ) . '01' );
+	$last  = $first->modify( 'last day of this month' );
+	$start = $first->modify( '-' . ( (int) $first->format( 'N' ) - 1 ) . ' days' );
+	$end   = $last->modify( '-' . ( (int) $last->format( 'N' ) - 1 ) . ' days' )->modify( '+4 days' );
+	$out   = array();
+	foreach ( dgn_exams_between( $start->format( 'Y-m-d' ), $end->format( 'Y-m-d' ) ) as $row ) {
+		$out[] = array(
+			'id'      => (int) $row['id'],
+			'cls'     => $row['cls'],
+			'date'    => $row['exam_date'],
+			'subject' => $row['subject'],
+		);
+	}
+	return array(
+		'from'  => $start->format( 'Y-m-d' ),
+		'to'    => $end->format( 'Y-m-d' ),
+		'exams' => $out,
+	);
+}
+
 function dgn_shortcode() {
 	$s   = dgn_settings();
 	$who = dgn_whoami();
@@ -60,6 +93,7 @@ function dgn_shortcode() {
 		'today'      => dgn_today(),
 		'syStart'    => dgn_school_year()[0],
 		'syEnd'      => dgn_school_year()[1],
+		'preload'    => dgn_preload_month( $s ),
 	);
 	wp_add_inline_script( 'dgn-app', 'window.DGN_CONFIG = ' . wp_json_encode( $config ) . ';', 'before' );
 

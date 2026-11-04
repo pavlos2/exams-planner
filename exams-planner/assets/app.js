@@ -758,6 +758,14 @@
     };
     setMsg(SSO_ERR[ssoError] || SSO_ERR.server, 'err');
   }
+  // Οι δηλώσεις του πρώτου μήνα έρχονται μέσα στη σελίδα: ο πίνακας εμφανίζεται αμέσως γεμάτος.
+  // Το load() τρέχει κανονικά αμέσως μετά (ονόματα, «δικές μου», νεότερες αλλαγές).
+  (function usePreload() {
+    var p = cfg.preload, r0 = monthRange();
+    if (!p || !p.exams || p.from !== ymd(r0.start) || p.to !== ymd(r0.end)) return;
+    p.exams.forEach(function (e) { state.exams[e.cls + '|' + e.date] = e; });
+    state.loaded = true;
+  })();
   try {
     renderTop();
     render();
