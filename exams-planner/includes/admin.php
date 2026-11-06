@@ -234,6 +234,14 @@ function dgn_admin_tab_settings() {
 		.dgn-settings tr.dgn-code-row > th, .dgn-settings tr.dgn-code-row > td { padding-top: 6px; }
 		/* Ενότητα που δεν αφορά την τρέχουσα επιλογή «Ποιος κάνει δηλώσεις»: γκρι και ανενεργή. */
 		.dgn-settings tr.dgn-off > th, .dgn-settings tr.dgn-off > td { opacity: .5; }
+		/* Επιλογές μέσα στην ίδια γραμμή: η καθεμία χωριστά, με κενό ανάμεσα. */
+		.dgn-settings .dgn-opt { margin: 0 0 14px; }
+		.dgn-settings .dgn-opt:last-of-type { margin-bottom: 8px; }
+		/* Σύνδεση με ΠΣΔ: κενό ανάμεσα στις ομάδες πεδίων· οι σημειώσεις χωριστά, κάτω από μια λεπτή γραμμή. */
+		.dgn-settings .dgn-group { margin: 0 0 16px; }
+		.dgn-settings .dgn-group label { line-height: 2; }
+		.dgn-settings .dgn-notes { border-top: 1px solid #dcdcde; padding-top: 10px; margin-top: 4px; }
+		.dgn-settings .dgn-notes p.description { margin: 0 0 8px; }
 	</style>
 	<form class="dgn-settings" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 		<input type="hidden" name="action" value="dgn_save">
@@ -269,20 +277,22 @@ function dgn_admin_tab_settings() {
 					<?php if ( ! dgn_sso_requirements_ok() ) : ?>
 						<p style="color:#b32d2e"><strong>Ο server δεν έχει τις επεκτάσεις PHP curl/dom που χρειάζεται η σύνδεση με ΠΣΔ.</strong> Ζητήστε τις από τη φιλοξενία.</p>
 					<?php endif; ?>
-					<fieldset><strong>Διακομιστής ΠΣΔ</strong><br>
+					<fieldset class="dgn-group"><strong>Διακομιστής ΠΣΔ</strong><br>
 						<label><input type="radio" name="sso_server" value="prod" <?php checked( $s['sso_server'], 'prod' ); ?>> Κανονικός (<code>sso.sch.gr</code>)</label><br>
 						<label><input type="radio" name="sso_server" value="test" <?php checked( $s['sso_server'], 'test' ); ?>> Δοκιμαστικός (<code>sso-01-test.sch.gr</code>) — μόνο όσο το ΠΣΔ έχει εγγράψει την υπηρεσία εκεί</label>
 						<?php if ( defined( 'DGN_CAS_HOST' ) ) : ?><br><em>Προσοχή: το wp-config.php ορίζει <code>DGN_CAS_HOST</code> = <code><?php echo esc_html( DGN_CAS_HOST ); ?></code>, που υπερισχύει αυτής της επιλογής.</em><?php endif; ?>
 					</fieldset>
-					<p><label for="dgn-sso-service"><strong>Διεύθυνση υπηρεσίας</strong> (ακριβώς όπως δηλώθηκε στο ΠΣΔ)</label><br>
+					<p class="dgn-group"><label for="dgn-sso-service"><strong>Διεύθυνση υπηρεσίας</strong> (ακριβώς όπως δηλώθηκε στο ΠΣΔ)</label><br>
 					<input id="dgn-sso-service" name="sso_service" class="regular-text" value="<?php echo esc_attr( $s['sso_service'] ); ?>" placeholder="https://&lt;σχολείο&gt;.&lt;νομός&gt;.sch.gr/exams-planner/"></p>
-					<p><label for="dgn-sso-units"><strong>Κωδικός σχολικής μονάδας</strong> (όπως στο myschool· περισσότεροι με κόμμα)</label><br>
+					<p class="dgn-group"><label for="dgn-sso-units"><strong>Κωδικός σχολικής μονάδας</strong> (όπως στο myschool· περισσότεροι με κόμμα)</label><br>
 					<input id="dgn-sso-units" name="sso_units" class="regular-text" value="<?php echo esc_attr( $s['sso_units'] ); ?>"></p>
-					<p><label for="dgn-sso-roles"><strong>Ρόλοι που επιτρέπονται</strong> (τιμές του umdobject)</label><br>
+					<p class="dgn-group"><label for="dgn-sso-roles"><strong>Ρόλοι που επιτρέπονται</strong> (τιμές του umdobject)</label><br>
 					<input id="dgn-sso-roles" name="sso_roles" class="regular-text" value="<?php echo esc_attr( $s['sso_roles'] ); ?>"></p>
-					<p class="description">Στο ΠΣΔ ζητήστε τα attributes: <code>uid, sn, umdobject, edupersonorgunitdn:gsnunitcode:extended</code>.
-					Οι απορρίψεις εισόδου (π.χ. μαθητής ή εκπαιδευτικός άλλου σχολείου) φαίνονται στο «Ιστορικό» με τον ρόλο και τους κωδικούς μονάδας, χωρίς ονόματα.<br>
-					Διεύθυνση που θα στέλνεται στο ΠΣΔ: <code><?php echo esc_html( dgn_sso_service_url( $s ) ); ?></code></p>
+					<div class="dgn-notes">
+						<p class="description">Στο ΠΣΔ ζητήστε τα attributes: <code>uid, sn, umdobject, edupersonorgunitdn:gsnunitcode:extended</code>.</p>
+						<p class="description">Οι απορρίψεις εισόδου (π.χ. μαθητής ή εκπαιδευτικός άλλου σχολείου) φαίνονται στο «Ιστορικό» με τον ρόλο και τους κωδικούς μονάδας, χωρίς ονόματα.</p>
+						<p class="description">Διεύθυνση που θα στέλνεται στο ΠΣΔ: <code><?php echo esc_html( dgn_sso_service_url( $s ) ); ?></code></p>
+					</div>
 				</td>
 			</tr>
 			<tr>
@@ -292,9 +302,14 @@ function dgn_admin_tab_settings() {
 			<tr>
 				<th scope="row">Προβολή</th>
 				<td>
-					<label><input type="checkbox" name="public_view" value="1" <?php checked( $s['public_view'], 1 ); ?>> Μαθητές και γονείς βλέπουν τον πίνακα (χωρίς ονόματα καθηγητών, χωρίς δυνατότητα αλλαγών)</label><br>
-					<label><input type="checkbox" name="allow_past" value="1" <?php checked( $s['allow_past'], 1 ); ?>> Οι καθηγητές μπορούν να δηλώσουν και ημερομηνίες που έχουν περάσει</label><br>
-					<label>Ελάχιστη προειδοποίηση: <input type="number" name="min_notice" min="0" max="30" class="small-text" value="<?php echo (int) $s['min_notice']; ?>"> εργάσιμες ημέρες πριν το διαγώνισμα, χωρίς Σαββατοκύριακα και αργίες. 0 = χωρίς όριο.</label>
+					<label><input type="checkbox" name="public_view" value="1" <?php checked( $s['public_view'], 1 ); ?>> Μαθητές και γονείς βλέπουν τον πίνακα (χωρίς ονόματα καθηγητών, χωρίς δυνατότητα αλλαγών)</label>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">Προθεσμίες δήλωσης</th>
+				<td>
+					<div class="dgn-opt"><label><input type="checkbox" name="allow_past" value="1" <?php checked( $s['allow_past'], 1 ); ?>> Οι καθηγητές μπορούν να δηλώσουν και ημερομηνίες που έχουν περάσει</label></div>
+					<div class="dgn-opt"><label>Ελάχιστη προειδοποίηση: <input type="number" name="min_notice" min="0" max="30" class="small-text" value="<?php echo (int) $s['min_notice']; ?>"> εργάσιμες ημέρες πριν το διαγώνισμα, χωρίς Σαββατοκύριακα και αργίες. 0 = χωρίς όριο.</label></div>
 					<p class="description">Δεν ισχύει για τη Διεύθυνση (διαχειριστή) ούτε για τη διαγραφή δηλώσεων.<?php if ( (int) $s['min_notice'] > 0 ) : ?> Σήμερα, η νωρίτερη ημερομηνία που μπορεί να δηλωθεί είναι <strong><?php echo esc_html( dgn_parse_date( dgn_earliest_allowed( (int) $s['min_notice'], $s ) )->format( 'd/m/Y' ) ); ?></strong>.<?php endif; ?></p>
 				</td>
 			</tr>
