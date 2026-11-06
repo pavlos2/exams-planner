@@ -170,7 +170,7 @@ function dgn_rest_create( WP_REST_Request $r ) {
 	if ( isset( $hol[ $day ] ) ) {
 		return dgn_err( 'dgn_holiday', sprintf( 'Η ημέρα είναι αργία (%s).', $hol[ $day ] ), 400 );
 	}
-	if ( 'admin' !== $who['level'] && ! $s['allow_past'] && $day < dgn_today() ) {
+	if ( 'admin' !== $who['level'] && $day < dgn_today() ) { // περασμένες ημερομηνίες: μόνο η Διεύθυνση
 		return dgn_err( 'dgn_past', 'Η ημερομηνία έχει περάσει.', 400 );
 	}
 	$notice = (int) $s['min_notice'];

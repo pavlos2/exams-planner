@@ -88,7 +88,7 @@ function dgn_shortcode() {
 		'holidays'   => (object) dgn_holidays( $s ),
 		'weeklyMax'  => max( 1, (int) $s['weekly_max'] ),
 		'publicView' => (bool) $s['public_view'],
-		'allowPast'  => (bool) $s['allow_past'],
+		'allowPast'  => false, // καταργήθηκε (1.9.80): περασμένες ημερομηνίες μόνο για τη Διεύθυνση
 		'minNotice'  => max( 0, (int) $s['min_notice'] ),
 		'today'      => dgn_today(),
 		'syStart'    => dgn_school_year()[0],

@@ -60,7 +60,7 @@ function dgn_admin_save() {
 	$new['school_name'] = sanitize_text_field( isset( $in['school_name'] ) ? $in['school_name'] : '' );
 	$new['teachers']    = sanitize_textarea_field( isset( $in['teachers'] ) ? $in['teachers'] : '' );
 	$new['public_view'] = empty( $in['public_view'] ) ? 0 : 1;
-	$new['allow_past']  = empty( $in['allow_past'] ) ? 0 : 1;
+	$new['allow_past']  = 0; // καταργήθηκε (1.9.80): οι καθηγητές δεν δηλώνουν περασμένες ημερομηνίες
 	$new['min_notice']  = min( 30, max( 0, (int) ( isset( $in['min_notice'] ) ? $in['min_notice'] : 0 ) ) );
 
 	$code = trim( sanitize_text_field( isset( $in['code'] ) ? $in['code'] : '' ) );
@@ -202,10 +202,19 @@ function dgn_admin_tab_settings() {
 	list( , $bad ) = dgn_parse_holidays( $s['holidays'] );
 	?>
 	<?php $pages = dgn_app_pages(); ?>
+	<?php if ( ! $pages ) : ?>
+		<div class="notice notice-warning inline" style="margin:16px 0;max-width:780px;padding:10px 14px">
+			<p style="margin:.3em 0 .6em"><strong>Το πρόγραμμα δεν εμφανίζεται ακόμα στην ιστοσελίδα.</strong> Για να το δουν καθηγητές, μαθητές και γονείς:</p>
+			<ol style="margin:0 0 .6em 1.6em;line-height:1.9">
+				<li><strong>Σελίδες → Προσθήκη νέας</strong>, με τίτλο π.χ. «Προγραμματισμός διαγωνισμάτων».</li>
+				<li>Γράψτε μέσα στη σελίδα: <code>[examsplanner]</code></li>
+				<li>Πατήστε <strong>Δημοσίευση</strong>.</li>
+			</ol>
+			<p style="margin:.4em 0 .5em"><a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=page' ) ); ?>">Δημιουργία σελίδας</a></p>
+		</div>
+	<?php endif; ?>
 	<div style="background:#fff;border:1px solid #c3c4c7;padding:12px 16px;margin:16px 0;max-width:780px;line-height:1.7">
-		<?php if ( ! $pages ) : ?>
-			<strong>Πώς το βάζετε στην ιστοσελίδα:</strong> δημιουργήστε μια σελίδα και γράψτε μέσα της <code>[examsplanner]</code>.
-		<?php else : ?>
+		<?php if ( $pages ) : ?>
 			<?php foreach ( $pages as $p ) : ?>
 				<strong>Σελίδα προγράμματος:</strong> <a href="<?php echo esc_url( get_permalink( $p ) ); ?>" target="_blank"><?php echo esc_html( get_permalink( $p ) ); ?></a><br>
 				<?php if ( 'code' === $s['access'] ) : ?>
@@ -308,9 +317,8 @@ function dgn_admin_tab_settings() {
 			<tr>
 				<th scope="row">Προθεσμίες δήλωσης</th>
 				<td>
-					<div class="dgn-opt"><label><input type="checkbox" name="allow_past" value="1" <?php checked( $s['allow_past'], 1 ); ?>> Οι καθηγητές μπορούν να δηλώσουν και ημερομηνίες που έχουν περάσει</label></div>
 					<div class="dgn-opt"><label>Ελάχιστη προειδοποίηση: <input type="number" name="min_notice" min="0" max="30" class="small-text" value="<?php echo (int) $s['min_notice']; ?>"> εργάσιμες ημέρες πριν το διαγώνισμα, χωρίς Σαββατοκύριακα και αργίες. 0 = χωρίς όριο.</label></div>
-					<p class="description">Δεν ισχύει για τη Διεύθυνση (διαχειριστή) ούτε για τη διαγραφή δηλώσεων.<?php if ( (int) $s['min_notice'] > 0 ) : ?> Σήμερα, η νωρίτερη ημερομηνία που μπορεί να δηλωθεί είναι <strong><?php echo esc_html( dgn_parse_date( dgn_earliest_allowed( (int) $s['min_notice'], $s ) )->format( 'd/m/Y' ) ); ?></strong>.<?php endif; ?></p>
+					<p class="description">Οι καθηγητές δεν δηλώνουν ημερομηνίες που έχουν περάσει. Δεν ισχύει για τη Διεύθυνση (διαχειριστή), που μπορεί να δηλώσει και περασμένες ημερομηνίες, ούτε για τη διαγραφή δηλώσεων.<?php if ( (int) $s['min_notice'] > 0 ) : ?> Σήμερα, η νωρίτερη ημερομηνία που μπορεί να δηλωθεί είναι <strong><?php echo esc_html( dgn_parse_date( dgn_earliest_allowed( (int) $s['min_notice'], $s ) )->format( 'd/m/Y' ) ); ?></strong>.<?php endif; ?></p>
 				</td>
 			</tr>
 			<tr>
