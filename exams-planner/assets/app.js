@@ -471,7 +471,7 @@
     if (state.token || state.level === 'admin') { window.location.replace(pageUrl()); return; }
     root.classList.add('dgn-loginview');
     var user = el('input', { type: 'text', name: 'username', autocomplete: 'username', value: (cfg.school || 'Σχολείο') + ' – καθηγητές', class: 'dgn-vh', tabindex: '-1', 'aria-hidden': 'true', readonly: true });
-    var code = el('input', { id: 'dgn-code', type: 'password', name: 'password', autocomplete: 'current-password', required: true });
+    var code = el('input', { id: 'dgn-code', type: 'password', name: 'password', autocomplete: 'current-password', autocapitalize: 'none', spellcheck: 'false', required: true });
     // Μη επιλεγμένο από προεπιλογή: ασφαλέστερο σε κοινόχρηστους υπολογιστές.
     var remember = el('input', { id: 'dgn-remember', type: 'checkbox' });
     var btn = el('button', { type: 'submit', class: 'dgn-primary', text: 'Είσοδος' });
@@ -479,7 +479,7 @@
     var form = el('form', { class: 'dgn-loginpage', method: 'post', action: '#' }, [
       el('h2', { text: 'Είσοδος καθηγητών' }),
       user,
-      el('label', { for: 'dgn-code' }, ['Κωδικός', code]),
+      el('label', { for: 'dgn-code' }, ['Κωδικός', code, el('small', { text: 'Με λατινικούς χαρακτήρες (EN). Προσοχή στα κεφαλαία και τα μικρά.' })]),
       el('label', { for: 'dgn-remember', class: 'dgn-check' }, [remember, el('span', null, [
         'Να με θυμάται αυτή η συσκευή',
         el('small', { text: 'Μην το επιλέγετε σε κοινόχρηστο υπολογιστή, π.χ. στο γραφείο καθηγητών.' })

@@ -48,6 +48,7 @@
 }
 .dgn-app .dgn-loginpage h2 { margin: 0; font-size: 22px; line-height: 1.2; }
 .dgn-app .dgn-loginpage .dgn-primary { width: 100%; }
+.dgn-app .dgn-loginpage label > small { display: block; margin-top: 4px; font-size: 12px; font-weight: 400; color: var(--dgn-muted); }
 .dgn-app .dgn-check { flex-direction: row; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--dgn-ink); font-weight: 500; cursor: pointer; }
 .dgn-app .dgn-check input { width: 18px; height: 18px; min-width: 18px; margin: 2px 0 0; padding: 0; accent-color: var(--dgn-accent); }
 .dgn-app .dgn-check span { display: flex; flex-direction: column; gap: 2px; }
@@ -231,7 +232,7 @@ body.dgn-page h1.dgn-centered-title {
    Μέσα στο <article> της σελίδας κάθεται απόλυτα στην κάτω δεξιά γωνία, ώστε να μην προσθέτει κενό.
    Χωρίς <article> (άλλο θέμα) μένει στη ροή, δεξιά, χωρίς περιθώριο. Χρώμα = --dgn-muted. */
 .dgn-credit {
-  font-size: 10px !important;
+  font-size: 8px !important;
   line-height: 1.4 !important;
   margin: 0 !important;
   padding: 0 !important;
