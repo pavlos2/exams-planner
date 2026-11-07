@@ -34,16 +34,11 @@ function dgn_default_settings() {
 			'Οικονομικά | ΟΙΚΝ',
 			'Οικιακή Οικονομία | ΟΙΚ',
 		) ),
-		'holidays'    => implode( "\n", array(
-			'2026-10-28 | 28η Οκτωβρίου',
-			'2026-11-17 | Πολυτεχνείο',
-			'2026-12-24 έως 2027-01-07 | Χριστούγεννα',
-			'2027-01-30 | Τριών Ιεραρχών',
-			'2027-03-15 | Καθαρά Δευτέρα',
-			'2027-03-25 | 25η Μαρτίου',
-			'2027-04-26 έως 2027-05-07 | Πάσχα',
-			'2027-06-21 | Αγίου Πνεύματος',
-		) ),
+		// Πανελλαδικές αργίες: συμπληρώνονται αυτόματα για κάθε σχολική χρονιά (βλ. dgn_national_holidays_text()).
+		'holidays'       => dgn_national_holidays_text( (int) substr( dgn_school_year()[0], 0, 4 ) ),
+		'holidays_year'  => (int) substr( dgn_school_year()[0], 0, 4 ), // για ποια χρονιά συμπληρώθηκαν
+		'holidays_auto'  => 1,  // 1 = νέα συμπλήρωση αυτόματα σε κάθε νέα σχολική χρονιά
+		'holidays_local' => '', // τοπικές αργίες· «ΜΜ-ΗΗ» = κάθε χρόνο
 		'weekly_max'  => 3,
 		'access'      => 'code',   // 'code' = κοινός κωδικός, 'users' = λογαριασμοί WordPress, 'sso' = λογαριασμοί ΠΣΔ
 		'sso_service' => '',       // Διεύθυνση υπηρεσίας όπως δηλώθηκε στο ΠΣΔ (κενό = η σελίδα της εφαρμογής)
@@ -51,7 +46,7 @@ function dgn_default_settings() {
 		'sso_roles'   => 'teacher, ateacher, pteacher',
 		'sso_server'  => 'prod',   // 'prod' = sso.sch.gr, 'test' = sso-01-test.sch.gr (δοκιμαστικός διακομιστής ΠΣΔ)
 		'sso_ver'     => 1,
-		'code'        => (string) wp_rand( 100000, 999999 ),
+		'code'        => dgn_generate_code(),
 		'code_ver'    => 1,
 		'public_view' => 1,
 		// Λίστα καθηγητών για τη φόρμα δήλωσης. Κενή λίστα = ελεύθερο κείμενο.
@@ -72,8 +67,92 @@ function dgn_settings() {
 		$s = dgn_default_settings();
 		update_option( DGN_OPTION, $s, false );
 	}
+	$changed = false;
+	if ( ! isset( $s['holidays_year'] ) ) {
+		$s       = dgn_migrate_holidays( $s ); // πρώτη φορά μετά την αναβάθμιση σε 1.9.82
+		$changed = true;
+	}
+	$sy = (int) substr( dgn_school_year()[0], 0, 4 );
+	if ( ! empty( $s['holidays_auto'] ) && (int) $s['holidays_year'] !== $sy ) {
+		// Νέα σχολική χρονιά: οι πανελλαδικές αργίες ξαναγράφονται για τη νέα χρονιά.
+		$s['holidays']           = dgn_national_holidays_text( $sy );
+		$s['holidays_year']      = $sy;
+		$s['holidays_refreshed'] = $sy; // για μήνυμα στις Ρυθμίσεις
+		$changed                 = true;
+	}
+	if ( $changed ) {
+		update_option( DGN_OPTION, $s, false );
+	}
 	$cache = array_merge( dgn_default_settings(), $s );
 	return $cache;
+}
+
+/**
+ * Ορθόδοξο Πάσχα ενός έτους (αλγόριθμος Meeus για το Ιουλιανό ημερολόγιο + 13 ημέρες, ισχύει 1900–2099).
+ */
+function dgn_orthodox_easter( $y ) {
+	$a = $y % 4;
+	$b = $y % 7;
+	$c = $y % 19;
+	$d = ( 19 * $c + 15 ) % 30;
+	$e = ( 2 * $a + 4 * $b - $d + 34 ) % 7;
+	$m = intdiv( $d + $e + 114, 31 );
+	$n = ( ( $d + $e + 114 ) % 31 ) + 1;
+	return ( new DateTimeImmutable( sprintf( '%04d-%02d-%02d', $y, $m, $n ), new DateTimeZone( 'UTC' ) ) )->modify( '+13 days' );
+}
+
+/** Οι πανελλαδικές σχολικές αργίες της χρονιάς $sy–($sy+1), ως κείμενο (μία ανά γραμμή, κατά ημερομηνία). */
+function dgn_national_holidays_text( $sy ) {
+	$sy = (int) $sy;
+	$n  = $sy + 1;
+	$e  = dgn_orthodox_easter( $n );
+	$f  = function ( DateTimeImmutable $d ) { return $d->format( 'Y-m-d' ); };
+	$l  = array(
+		array( "$sy-10-28", "$sy-10-28 | 28η Οκτωβρίου" ),
+		array( "$sy-11-17", "$sy-11-17 | Πολυτεχνείο" ),
+		array( "$sy-12-24", "$sy-12-24 έως $n-01-07 | Χριστούγεννα" ),
+		array( "$n-01-30", "$n-01-30 | Τριών Ιεραρχών" ),
+		array( $f( $e->modify( '-48 days' ) ), $f( $e->modify( '-48 days' ) ) . ' | Καθαρά Δευτέρα' ),
+		array( "$n-03-25", "$n-03-25 | 25η Μαρτίου" ),
+		array( $f( $e->modify( '-6 days' ) ), $f( $e->modify( '-6 days' ) ) . ' έως ' . $f( $e->modify( '+7 days' ) ) . ' | Πάσχα' ),
+		array( "$n-05-01", "$n-05-01 | Πρωτομαγιά" ),
+		array( $f( $e->modify( '+50 days' ) ), $f( $e->modify( '+50 days' ) ) . ' | Αγίου Πνεύματος' ),
+	);
+	usort( $l, function ( $x, $y ) { return strcmp( $x[0], $y[0] ); } );
+	return implode( "\n", array_column( $l, 1 ) );
+}
+
+/**
+ * Μετάβαση από το ενιαίο πεδίο αργιών (έως 1.9.81): οι πανελλαδικές συμπληρώνονται για τη φετινή χρονιά
+ * και όσες γραμμές δεν καλύπτονται από αυτές μεταφέρονται στις τοπικές. Καμία ημέρα δεν «ξεμπλοκάρει».
+ * Αν το παλιό πεδίο δεν μοιάζει με ελληνικό σχολικό ημερολόγιο, μένει όπως είναι και η αυτόματη ενημέρωση κλείνει.
+ */
+function dgn_migrate_holidays( $s ) {
+	$sy  = (int) substr( dgn_school_year()[0], 0, 4 );
+	$old = isset( $s['holidays'] ) ? (string) $s['holidays'] : '';
+	$nat = dgn_national_holidays_text( $sy );
+	list( $natmap ) = dgn_parse_holidays( $nat, $sy );
+	list( $oldmap ) = dgn_parse_holidays( $old, $sy );
+	$s['holidays_year']  = $sy;
+	$s['holidays_local'] = isset( $s['holidays_local'] ) ? (string) $s['holidays_local'] : '';
+	if ( '' !== trim( $old ) && count( array_intersect_key( $natmap, $oldmap ) ) * 2 < count( $natmap ) ) {
+		$s['holidays_auto'] = 0; // άλλο ημερολόγιο: κρατάμε το κείμενο όπως είναι
+		return $s;
+	}
+	$local = array();
+	foreach ( preg_split( '/\R/u', $old ) as $line ) {
+		list( $m, $bad ) = dgn_parse_holidays( $line, $sy );
+		if ( '' === trim( $line ) ) {
+			continue;
+		}
+		if ( $bad || array_diff_key( $m, $natmap ) ) {
+			$local[] = trim( $line ); // τοπική (ή μη αναγνωρίσιμη): μεταφέρεται, δεν χάνεται
+		}
+	}
+	$s['holidays']       = $nat;
+	$s['holidays_auto']  = 1;
+	$s['holidays_local'] = trim( implode( "\n", array_filter( array( trim( $s['holidays_local'] ), implode( "\n", $local ) ) ) ) );
+	return $s;
 }
 
 /** Λίστα τμημάτων (μία ανά γραμμή, χωρίς διπλότυπα). */
@@ -123,7 +202,13 @@ function dgn_subjects( $s = null ) {
  *
  * @return array{0: array<string,string>, 1: string[]}
  */
-function dgn_parse_holidays( $text ) {
+/**
+ * Αργίες από κείμενο: «YYYY-MM-DD | Όνομα» ή «YYYY-MM-DD έως YYYY-MM-DD | Όνομα».
+ * Και χωρίς έτος, «ΜΜ-ΗΗ | Όνομα» (ή διάστημα): ισχύει κάθε χρόνο, μέσα στη σχολική χρονιά $sy–($sy+1)
+ * (Σεπτέμβριος–Δεκέμβριος στο $sy, Ιανουάριος–Αύγουστος στο $sy+1).
+ */
+function dgn_parse_holidays( $text, $sy = null ) {
+	$sy   = null === $sy ? (int) substr( dgn_school_year()[0], 0, 4 ) : (int) $sy;
 	$map  = array();
 	$bad  = array();
 	foreach ( preg_split( '/\R/u', (string) $text ) as $line ) {
@@ -131,9 +216,14 @@ function dgn_parse_holidays( $text ) {
 		if ( '' === $line ) {
 			continue;
 		}
-		if ( ! preg_match( '/^(\d{4}-\d{2}-\d{2})(?:\s*(?:έως|-|–)\s*(\d{4}-\d{2}-\d{2}))?\s*(?:\|\s*(.*))?$/u', $line, $m ) ) {
+		if ( ! preg_match( '/^((?:\d{4}-)?\d{2}-\d{2})(?:\s*(?:έως|-|–)\s*((?:\d{4}-)?\d{2}-\d{2}))?\s*(?:\|\s*(.*))?$/u', $line, $m ) ) {
 			$bad[] = $line;
 			continue;
+		}
+		foreach ( array( 1, 2 ) as $i ) { // «ΜΜ-ΗΗ» → πλήρης ημερομηνία μέσα στη σχολική χρονιά
+			if ( ! empty( $m[ $i ] ) && 5 === strlen( $m[ $i ] ) ) {
+				$m[ $i ] = ( (int) substr( $m[ $i ], 0, 2 ) >= 9 ? $sy : $sy + 1 ) . '-' . $m[ $i ];
+			}
 		}
 		$from = dgn_parse_date( $m[1] );
 		$to   = ! empty( $m[2] ) ? dgn_parse_date( $m[2] ) : $from;
@@ -149,10 +239,12 @@ function dgn_parse_holidays( $text ) {
 	return array( $map, $bad );
 }
 
+/** Όλες οι αργίες: πανελλαδικές + τοπικές. */
 function dgn_holidays( $s = null ) {
 	$s = $s ? $s : dgn_settings();
-	list( $map ) = dgn_parse_holidays( $s['holidays'] );
-	return $map;
+	list( $map )   = dgn_parse_holidays( $s['holidays'] );
+	list( $local ) = dgn_parse_holidays( isset( $s['holidays_local'] ) ? $s['holidays_local'] : '' );
+	return $local + $map;
 }
 
 /** Αυστηρή ανάγνωση ημερομηνίας YYYY-MM-DD. */
@@ -309,4 +401,53 @@ function dgn_check_sso_token( $token, $s = null ) {
 function dgn_client_ip() {
 	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 	return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '';
+}
+
+/**
+ * Κανόνες του κοινού κωδικού καθηγητών: τουλάχιστον 8 λατινικοί χαρακτήρες (χωρίς κενά),
+ * με κεφαλαίο, μικρό, αριθμό και ένα σύμβολο από τα # $ ! %.
+ * Επιστρέφει τι λείπει (κενός πίνακας = ισχυρός κωδικός). Ίδιοι κανόνες και στο JS των Ρυθμίσεων.
+ */
+function dgn_code_problems( $code ) {
+	$code = (string) $code;
+	$p    = array();
+	if ( '' !== $code && ! preg_match( '/^[\x21-\x7E]+$/', $code ) ) {
+		$p[] = 'μόνο λατινικοί χαρακτήρες, αριθμοί και σύμβολα, χωρίς κενά';
+	}
+	if ( strlen( $code ) < 8 ) {
+		$p[] = 'τουλάχιστον 8 χαρακτήρες';
+	}
+	if ( ! preg_match( '/[A-Z]/', $code ) ) {
+		$p[] = 'ένα κεφαλαίο γράμμα';
+	}
+	if ( ! preg_match( '/[a-z]/', $code ) ) {
+		$p[] = 'ένα μικρό γράμμα';
+	}
+	if ( ! preg_match( '/[0-9]/', $code ) ) {
+		$p[] = 'έναν αριθμό';
+	}
+	if ( ! preg_match( '/[#$!%]/', $code ) ) {
+		$p[] = 'ένα σύμβολο (# $ ! %)';
+	}
+	return $p;
+}
+
+/** Τυχαίος ισχυρός κωδικός 8 χαρακτήρων (χωρίς χαρακτήρες που μπερδεύονται: 0/O, 1/l/I). */
+function dgn_generate_code() {
+	$sets = array( 'ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnpqrstuvwxyz', '23456789', '#$!%' );
+	$all  = implode( '', $sets );
+	$c    = array();
+	foreach ( $sets as $set ) {
+		$c[] = $set[ random_int( 0, strlen( $set ) - 1 ) ];
+	}
+	while ( count( $c ) < 8 ) {
+		$c[] = $all[ random_int( 0, strlen( $all ) - 1 ) ];
+	}
+	for ( $i = count( $c ) - 1; $i > 0; $i-- ) { // ανακάτεμα
+		$j        = random_int( 0, $i );
+		$t        = $c[ $i ];
+		$c[ $i ]  = $c[ $j ];
+		$c[ $j ]  = $t;
+	}
+	return implode( '', $c );
 }

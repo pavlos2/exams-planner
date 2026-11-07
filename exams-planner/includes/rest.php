@@ -65,6 +65,12 @@ function dgn_rest_login( WP_REST_Request $r ) {
 	$code = trim( (string) $r->get_param( 'code' ) );
 	if ( '' === $code || ! hash_equals( (string) $s['code'], $code ) ) {
 		set_transient( $key, $tries + 1, 15 * MINUTE_IN_SECONDS );
+		// Στο Ιστορικό: κάθε λάθος κωδικός, και το κλείδωμα στη 10η αποτυχία (με τη διεύθυνση IP).
+		dgn_log( 'λάθος κωδ.', array( 'cls' => '—', 'exam_date' => dgn_today(), 'subject' => 'είσοδος με κωδικό: προσπάθεια ' . ( $tries + 1 ) . ' από 10', 'teacher' => '' ), 'Επισκέπτης' );
+		if ( $tries + 1 >= 10 ) {
+			dgn_log( 'κλείδωμα', array( 'cls' => '—', 'exam_date' => dgn_today(), 'subject' => 'είσοδος με κωδικό: 15 λεπτά για αυτή τη διεύθυνση IP', 'teacher' => '' ), 'Επισκέπτης' );
+			return dgn_err( 'dgn_rate', 'Πολλές λανθασμένες προσπάθειες. Δοκιμάστε ξανά σε 15 λεπτά.', 429 );
+		}
 		return dgn_err( 'dgn_bad_code', 'Λάθος κωδικός καθηγητών.', 403 );
 	}
 	delete_transient( $key );

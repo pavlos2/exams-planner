@@ -28,6 +28,54 @@ add_action( 'admin_post_dgn_save', 'dgn_admin_save' );
 add_action( 'admin_post_dgn_delete', 'dgn_admin_delete' );
 add_action( 'admin_post_dgn_purge', 'dgn_admin_purge' );
 add_action( 'admin_post_dgn_clear_log', 'dgn_admin_clear_log' );
+add_action( 'admin_post_dgn_create_page', 'dgn_admin_create_page' );
+add_action( 'admin_post_dgn_fill_holidays', 'dgn_admin_fill_holidays' );
+
+/** «Συμπλήρωση πανελλαδικών αργιών»: ξαναγράφει το πεδίο με τις αργίες της τρέχουσας σχολικής χρονιάς. */
+function dgn_admin_fill_holidays() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( 'Δεν έχετε δικαίωμα.' );
+	}
+	check_admin_referer( 'dgn_fill_holidays' );
+	$s                  = get_option( DGN_OPTION );
+	$sy                 = (int) substr( dgn_school_year()[0], 0, 4 );
+	$s['holidays']      = dgn_national_holidays_text( $sy );
+	$s['holidays_year'] = $sy;
+	update_option( DGN_OPTION, $s, false );
+	wp_safe_redirect( dgn_admin_url( 'settings', array( 'dgn_msg' => 'holfilled' ) ) );
+	exit;
+}
+
+/**
+ * «Δημιουργία σελίδας»: φτιάχνει πρόχειρη σελίδα «Προγραμματισμός Διαγωνισμάτων» με το [examsplanner]
+ * και διεύθυνση /exams-planner/, και ανοίγει τον επεξεργαστή για «Δημοσίευση».
+ * Αν υπάρχει ήδη πρόχειρη σελίδα με το shortcode, ανοίγει αυτήν (δεν φτιάχνει δεύτερη).
+ */
+function dgn_admin_create_page() {
+	global $wpdb;
+	if ( ! current_user_can( 'publish_pages' ) ) {
+		wp_die( 'Δεν έχετε δικαίωμα.' );
+	}
+	check_admin_referer( 'dgn_create_page' );
+	$id = (int) $wpdb->get_var( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'page' AND post_status IN ('draft','pending','future','private') AND post_content LIKE '%[examsplanner%' ORDER BY ID DESC LIMIT 1" );
+	if ( ! $id ) {
+		$id = wp_insert_post(
+			array(
+				'post_type'    => 'page',
+				'post_status'  => 'draft',
+				'post_title'   => 'Προγραμματισμός Διαγωνισμάτων',
+				'post_name'    => 'exams-planner',
+				'post_content' => '[examsplanner]',
+			),
+			true
+		);
+		if ( is_wp_error( $id ) ) {
+			wp_die( esc_html( 'Η σελίδα δεν δημιουργήθηκε: ' . $id->get_error_message() ) );
+		}
+	}
+	wp_safe_redirect( admin_url( 'post.php?post=' . (int) $id . '&action=edit' ) );
+	exit;
+}
 
 function dgn_admin_url( $tab = 'settings', $args = array() ) {
 	return add_query_arg( array_merge( array( 'page' => 'exams-planner', 'tab' => $tab ), $args ), admin_url( 'admin.php' ) );
@@ -44,7 +92,11 @@ function dgn_admin_save() {
 	$new                = $old;
 	$new['classes']     = sanitize_textarea_field( isset( $in['classes'] ) ? $in['classes'] : '' );
 	$new['subjects']    = sanitize_textarea_field( isset( $in['subjects'] ) ? $in['subjects'] : '' );
-	$new['holidays']    = sanitize_textarea_field( isset( $in['holidays'] ) ? $in['holidays'] : '' );
+	$new['holidays']       = sanitize_textarea_field( isset( $in['holidays'] ) ? $in['holidays'] : '' );
+	$new['holidays_local'] = sanitize_textarea_field( isset( $in['holidays_local'] ) ? $in['holidays_local'] : '' );
+	$new['holidays_auto']  = empty( $in['holidays_auto'] ) ? 0 : 1;
+	$new['holidays_year']  = isset( $old['holidays_year'] ) ? (int) $old['holidays_year'] : (int) substr( dgn_school_year()[0], 0, 4 );
+	unset( $new['holidays_refreshed'] );
 	$new['weekly_max']  = min( 5, max( 1, (int) ( isset( $in['weekly_max'] ) ? $in['weekly_max'] : 3 ) ) );
 	$new['access']      = ( isset( $in['access'] ) && in_array( $in['access'], array( 'users', 'sso' ), true ) ) ? $in['access'] : 'code';
 	$new['sso_server']  = ( isset( $in['sso_server'] ) && 'test' === $in['sso_server'] ) ? 'test' : 'prod';
@@ -64,11 +116,13 @@ function dgn_admin_save() {
 	$new['min_notice']  = min( 30, max( 0, (int) ( isset( $in['min_notice'] ) ? $in['min_notice'] : 0 ) ) );
 
 	$code = trim( sanitize_text_field( isset( $in['code'] ) ? $in['code'] : '' ) );
+	// Ο κωδικός ελέγχεται όταν αλλάζει, και όταν η είσοδος γίνεται «με κωδικό» ενώ πριν δεν ήταν.
+	$check = ( '' !== $code && $code !== $old['code'] ) ? $code : ( ( 'code' === $new['access'] && 'code' !== $old['access'] ) ? $old['code'] : null );
+	if ( null !== $check && dgn_code_problems( $check ) ) {
+		wp_safe_redirect( dgn_admin_url( 'settings', array( 'dgn_msg' => 'weakcode' ) ) );
+		exit;
+	}
 	if ( '' !== $code && $code !== $old['code'] ) {
-		if ( mb_strlen( $code ) < 4 ) {
-			wp_safe_redirect( dgn_admin_url( 'settings', array( 'dgn_msg' => 'shortcode' ) ) );
-			exit;
-		}
 		$new['code']     = $code;
 		$new['code_ver'] = (int) $old['code_ver'] + 1; // αποσυνδέει όσους μπήκαν με τον παλιό κωδικό
 	}
@@ -80,7 +134,9 @@ function dgn_admin_save() {
 	if ( ! dgn_subjects( $new ) ) {
 		$errors[] = 'nosubjects';
 	}
-	list( , $bad ) = dgn_parse_holidays( $new['holidays'] );
+	list( , $bad )  = dgn_parse_holidays( $new['holidays'] );
+	list( , $bad2 ) = dgn_parse_holidays( $new['holidays_local'] );
+	$bad            = array_merge( $bad, $bad2 );
 	if ( $errors ) {
 		wp_safe_redirect( dgn_admin_url( 'settings', array( 'dgn_msg' => implode( ',', $errors ) ) ) );
 		exit;
@@ -147,10 +203,11 @@ function dgn_admin_clear_log() {
 function dgn_admin_notice( $msg ) {
 	$map = array(
 		'saved'      => array( 'success', 'Οι ρυθμίσεις αποθηκεύτηκαν.' ),
+		'holfilled'  => array( 'success', 'Οι πανελλαδικές αργίες συμπληρώθηκαν για την τρέχουσα σχολική χρονιά.' ),
 		'savedbad'   => array( 'warning', 'Οι ρυθμίσεις αποθηκεύτηκαν, αλλά κάποιες γραμμές στις αργίες δεν αναγνωρίστηκαν και αγνοούνται (δείτε παρακάτω).' ),
 		'noclasses'  => array( 'error', 'Δεν αποθηκεύτηκε: γράψτε τουλάχιστον ένα τμήμα.' ),
 		'nosubjects' => array( 'error', 'Δεν αποθηκεύτηκε: γράψτε τουλάχιστον ένα μάθημα.' ),
-		'shortcode'  => array( 'error', 'Δεν αποθηκεύτηκε: ο κωδικός καθηγητών πρέπει να έχει τουλάχιστον 4 χαρακτήρες.' ),
+		'weakcode'   => array( 'error', 'Δεν αποθηκεύτηκε: ο κωδικός καθηγητών πρέπει να έχει τουλάχιστον 8 λατινικούς χαρακτήρες, με κεφαλαίο, μικρό, αριθμό και ένα σύμβολο (# $ ! %).' ),
 		'deleted'    => array( 'success', 'Η δήλωση διαγράφηκε.' ),
 		'purged'     => array( 'success', sprintf( 'Διαγράφηκαν %d δηλώσεις.', isset( $_GET['n'] ) ? (int) $_GET['n'] : 0 ) ),
 		'purgefail'  => array( 'error', 'Η εκκαθάριση δεν έγινε: γράψτε ΔΙΑΓΡΑΦΗ με κεφαλαία και επιλέξτε ημερομηνία.' ),
@@ -199,18 +256,31 @@ function dgn_app_pages() {
 
 function dgn_admin_tab_settings() {
 	$s = dgn_settings();
-	list( , $bad ) = dgn_parse_holidays( $s['holidays'] );
+	list( , $bad )      = dgn_parse_holidays( $s['holidays'] );
+	list( , $bad_local ) = dgn_parse_holidays( $s['holidays_local'] );
+	$sy                 = (int) substr( dgn_school_year()[0], 0, 4 );
+	if ( ! empty( $s['holidays_refreshed'] ) ) {
+		// Μήνυμα μία φορά, μετά την αυτόματη ενημέρωση της νέας χρονιάς.
+		$opt = get_option( DGN_OPTION );
+		unset( $opt['holidays_refreshed'] );
+		update_option( DGN_OPTION, $opt, false );
+		echo '<div class="notice notice-info inline" style="max-width:780px"><p>Οι πανελλαδικές αργίες ενημερώθηκαν αυτόματα για το σχολικό έτος ' . (int) $s['holidays_refreshed'] . '–' . ( (int) $s['holidays_refreshed'] + 1 ) . '. Ελέγξτε αν χρειάζεται κάποια διόρθωση.</p></div>';
+	}
 	?>
 	<?php $pages = dgn_app_pages(); ?>
 	<?php if ( ! $pages ) : ?>
 		<div class="notice notice-warning inline" style="margin:16px 0;max-width:780px;padding:10px 14px">
 			<p style="margin:.3em 0 .6em"><strong>Το πρόγραμμα δεν εμφανίζεται ακόμα στην ιστοσελίδα.</strong> Για να το δουν καθηγητές, μαθητές και γονείς:</p>
 			<ol style="margin:0 0 .6em 1.6em;line-height:1.9">
-				<li><strong>Σελίδες → Προσθήκη νέας</strong>, με τίτλο π.χ. «Προγραμματισμός διαγωνισμάτων».</li>
-				<li>Γράψτε μέσα στη σελίδα: <code>[examsplanner]</code></li>
-				<li>Πατήστε <strong>Δημοσίευση</strong>.</li>
+				<li>Πατήστε <strong>Δημιουργία σελίδας</strong>: ανοίγει έτοιμη η σελίδα «Προγραμματισμός Διαγωνισμάτων».</li>
+				<li>Στη σελίδα που ανοίγει, πατήστε <strong>Δημοσίευση</strong>.</li>
 			</ol>
-			<p style="margin:.4em 0 .5em"><a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=page' ) ); ?>">Δημιουργία σελίδας</a></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:.4em 0 .5em">
+				<input type="hidden" name="action" value="dgn_create_page">
+				<?php wp_nonce_field( 'dgn_create_page' ); ?>
+				<button type="submit" class="button button-primary">Δημιουργία σελίδας</button>
+			</form>
+			<p style="margin:.2em 0 .4em;color:#646970">Εναλλακτικά: Σελίδες → Προσθήκη νέας, γράψτε μέσα στη σελίδα <code>[examsplanner]</code> και πατήστε Δημοσίευση.</p>
 		</div>
 	<?php endif; ?>
 	<div style="background:#fff;border:1px solid #c3c4c7;padding:12px 16px;margin:16px 0;max-width:780px;line-height:1.7">
@@ -251,6 +321,9 @@ function dgn_admin_tab_settings() {
 		.dgn-settings .dgn-group label { line-height: 2; }
 		.dgn-settings .dgn-notes { border-top: 1px solid #dcdcde; padding-top: 10px; margin-top: 4px; }
 		.dgn-settings .dgn-notes p.description { margin: 0 0 8px; }
+		.dgn-settings .dgn-strength { margin: 6px 0 4px; font-weight: 600; }
+		.dgn-settings .dgn-strength.ok { color: #00a32a; }
+		.dgn-settings .dgn-strength.bad { color: #d63638; }
 	</style>
 	<form class="dgn-settings" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 		<input type="hidden" name="action" value="dgn_save">
@@ -276,8 +349,9 @@ function dgn_admin_tab_settings() {
 			<tr class="dgn-code-row">
 				<th scope="row"><label for="dgn-code">Κωδικός καθηγητών</label></th>
 				<td>
-					<input id="dgn-code" name="code" class="regular-text" value="<?php echo esc_attr( $s['code'] ); ?>" autocomplete="off">
-					<p class="description">Αν τον αλλάξετε, όσοι είχαν μπει με τον παλιό θα πρέπει να γράψουν τον νέο. Οι δηλώσεις τους μένουν.</p>
+					<input id="dgn-code" name="code" class="regular-text" value="<?php echo esc_attr( $s['code'] ); ?>" autocomplete="off" autocapitalize="none" spellcheck="false">
+					<p id="dgn-code-strength" class="dgn-strength" aria-live="polite"></p>
+					<p class="description">Τουλάχιστον 8 λατινικοί χαρακτήρες, με κεφαλαίο, μικρό, αριθμό και ένα σύμβολο από τα <code>#</code> <code>$</code> <code>!</code> <code>%</code>. Αν τον αλλάξετε, όσοι είχαν μπει με τον παλιό θα πρέπει να γράψουν τον νέο. Οι δηλώσεις τους μένουν.</p>
 				</td>
 			</tr>
 			<tr class="dgn-sso-row">
@@ -318,7 +392,7 @@ function dgn_admin_tab_settings() {
 				<th scope="row">Προθεσμίες δήλωσης</th>
 				<td>
 					<div class="dgn-opt"><label>Ελάχιστη προειδοποίηση: <input type="number" name="min_notice" min="0" max="30" class="small-text" value="<?php echo (int) $s['min_notice']; ?>"> εργάσιμες ημέρες πριν το διαγώνισμα, χωρίς Σαββατοκύριακα και αργίες. 0 = χωρίς όριο.</label></div>
-					<p class="description">Οι καθηγητές δεν δηλώνουν ημερομηνίες που έχουν περάσει. Δεν ισχύει για τη Διεύθυνση (διαχειριστή), που μπορεί να δηλώσει και περασμένες ημερομηνίες, ούτε για τη διαγραφή δηλώσεων.<?php if ( (int) $s['min_notice'] > 0 ) : ?> Σήμερα, η νωρίτερη ημερομηνία που μπορεί να δηλωθεί είναι <strong><?php echo esc_html( dgn_parse_date( dgn_earliest_allowed( (int) $s['min_notice'], $s ) )->format( 'd/m/Y' ) ); ?></strong>.<?php endif; ?></p>
+					<p class="description">Οι καθηγητές δεν μπορούν να δηλώνουν περασμένες ημερομηνίες ούτε ημερομηνίες που εμπίπτουν στο διάστημα της ελάχιστης προειδοποίησης. Η Διεύθυνση (διαχειριστής) δεν έχει αυτούς τους περιορισμούς. Σήμερα, η νωρίτερη ημερομηνία που μπορεί να δηλώσει ένας καθηγητής είναι η <strong><?php echo esc_html( dgn_parse_date( (int) $s['min_notice'] > 0 ? dgn_earliest_allowed( (int) $s['min_notice'], $s ) : dgn_today() )->format( 'd/m/Y' ) ); ?></strong>.</p>
 				</td>
 			</tr>
 			<tr>
@@ -338,15 +412,29 @@ function dgn_admin_tab_settings() {
 			</tr>
 			<tr>
 				<th scope="row"><label for="dgn-holidays">Αργίες</label></th>
-				<td><textarea id="dgn-holidays" name="holidays" rows="9" cols="50"><?php echo esc_textarea( $s['holidays'] ); ?></textarea>
-				<p class="description">Μία ανά γραμμή: <code>2026-10-28 | 28η Οκτωβρίου</code> ή διάστημα <code>2026-12-24 έως 2027-01-07 | Χριστούγεννα</code>. Σε αυτές τις ημέρες δεν γίνονται δηλώσεις.</p>
-				<?php if ( $bad ) : ?>
-					<p style="color:#b32d2e"><strong>Δεν αναγνωρίστηκαν:</strong> <?php echo esc_html( implode( ' · ', $bad ) ); ?></p>
-				<?php endif; ?>
+				<td>
+					<div style="margin:0 0 6px"><strong>Πανελλαδικές αργίες <?php echo (int) $sy . '–' . ( (int) $sy + 1 ); ?></strong></div>
+					<textarea id="dgn-holidays" name="holidays" rows="9" cols="50" class="code"><?php echo esc_textarea( $s['holidays'] ); ?></textarea>
+					<?php if ( $bad ) : ?>
+						<p style="color:#b32d2e"><strong>Δεν αναγνωρίστηκαν:</strong> <?php echo esc_html( implode( ' · ', $bad ) ); ?></p>
+					<?php endif; ?>
+					<label style="display:block;margin:8px 0 4px"><input type="checkbox" name="holidays_auto" value="1" <?php checked( ! empty( $s['holidays_auto'] ) ); ?>> Αυτόματη ενημέρωση των πανελλαδικών αργιών κάθε σχολική χρονιά</label>
+					<p class="description" style="margin:0 0 8px">Κάθε νέα σχολική χρονιά το πεδίο ξαναγεμίζει μόνο του με τις αργίες της. Μέσα στη χρονιά μπορείτε να το διορθώσετε, π.χ. αν μετατεθεί η Πρωτομαγιά. Βγάλτε το τικ αν θέλετε να το συμπληρώνετε μόνοι σας.</p>
+					<p style="margin:0 0 18px"><button type="submit" form="dgn-fill-holidays" class="button" onclick="return confirm('Το πεδίο «Πανελλαδικές αργίες» θα αντικατασταθεί με τις αργίες του <?php echo (int) $sy . '–' . ( (int) $sy + 1 ); ?>. Συνέχεια;');">Συμπλήρωση πανελλαδικών αργιών</button> <span style="color:#646970">αντικαθιστά το πεδίο με τις αργίες της τρέχουσας χρονιάς</span></p>
+					<div style="margin:0 0 6px"><label for="dgn-holidays-local"><strong>Τοπικές αργίες</strong></label> <span style="color:#646970">(του σχολείου ή της πόλης σας· δεν αλλάζουν αυτόματα)</span></div>
+					<textarea id="dgn-holidays-local" name="holidays_local" rows="3" cols="50" class="code"><?php echo esc_textarea( $s['holidays_local'] ); ?></textarea>
+					<?php if ( $bad_local ) : ?>
+						<p style="color:#b32d2e"><strong>Δεν αναγνωρίστηκαν:</strong> <?php echo esc_html( implode( ' · ', $bad_local ) ); ?></p>
+					<?php endif; ?>
+					<p class="description">Μία ανά γραμμή. Χωρίς έτος ισχύει κάθε χρόνο: <code>11-08 | Πολιούχος</code>. Με έτος ισχύει μόνο τότε: <code>2027-05-20 έως 2027-05-21 | Επέτειος</code>. Σε όλες τις αργίες δεν γίνονται δηλώσεις.</p>
 				</td>
 			</tr>
 		</table>
 		<?php submit_button( 'Αποθήκευση' ); ?>
+	</form>
+	<form id="dgn-fill-holidays" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<input type="hidden" name="action" value="dgn_fill_holidays">
+		<?php wp_nonce_field( 'dgn_fill_holidays' ); ?>
 	</form>
 	<script>
 	( function () {
@@ -369,6 +457,21 @@ function dgn_admin_tab_settings() {
 			form.querySelectorAll( 'tr.dgn-off input, tr.dgn-off textarea, tr.dgn-off select' ).forEach( function ( el ) { el.disabled = false; } );
 		} );
 		sync();
+		// Ζωντανή ένδειξη ισχύος του κωδικού (ίδιοι κανόνες με το dgn_code_problems() της PHP).
+		var codeIn = form.querySelector( '#dgn-code' ), codeOut = form.querySelector( '#dgn-code-strength' );
+		function strength() {
+			if ( ! codeIn || ! codeOut ) return;
+			var v = codeIn.value.trim(), p = [];
+			if ( v && ! /^[\x21-\x7E]+$/.test( v ) ) p.push( 'μόνο λατινικοί χαρακτήρες, αριθμοί και σύμβολα, χωρίς κενά' );
+			if ( v.length < 8 ) p.push( 'τουλάχιστον 8 χαρακτήρες' );
+			if ( ! /[A-Z]/.test( v ) ) p.push( 'ένα κεφαλαίο γράμμα' );
+			if ( ! /[a-z]/.test( v ) ) p.push( 'ένα μικρό γράμμα' );
+			if ( ! /[0-9]/.test( v ) ) p.push( 'έναν αριθμό' );
+			if ( ! /[#$!%]/.test( v ) ) p.push( 'ένα σύμβολο (# $ ! %)' );
+			codeOut.textContent = p.length ? 'Αδύναμος κωδικός: χρειάζεται ' + p.join( ', ' ) + '.' : '✓ Ισχυρός κωδικός';
+			codeOut.className = 'dgn-strength ' + ( p.length ? 'bad' : 'ok' );
+		}
+		if ( codeIn ) { codeIn.addEventListener( 'input', strength ); strength(); }
 	} )();
 	</script>
 	<?php
