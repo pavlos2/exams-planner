@@ -107,7 +107,19 @@ function dgn_national_holidays_text( $sy ) {
 	$n  = $sy + 1;
 	$e  = dgn_orthodox_easter( $n );
 	$f  = function ( DateTimeImmutable $d ) { return $d->format( 'Y-m-d' ); };
+	// Σχολική εορτή: η τελευταία εργάσιμη (Δευτέρα–Παρασκευή) πριν από την επέτειο.
+	$eve = function ( $date ) {
+		$d = ( new DateTimeImmutable( $date, new DateTimeZone( 'UTC' ) ) )->modify( '-1 day' );
+		while ( (int) $d->format( 'N' ) > 5 ) {
+			$d = $d->modify( '-1 day' );
+		}
+		return $d->format( 'Y-m-d' );
+	};
+	$e28 = $eve( "$sy-10-28" );
+	$e25 = $eve( "$n-03-25" );
 	$l  = array(
+		array( $e28, "$e28 | Σχολική εορτή (28η Οκτωβρίου)" ),
+		array( $e25, "$e25 | Σχολική εορτή (25η Μαρτίου)" ),
 		array( "$sy-10-28", "$sy-10-28 | 28η Οκτωβρίου" ),
 		array( "$sy-11-17", "$sy-11-17 | Πολυτεχνείο" ),
 		array( "$sy-12-24", "$sy-12-24 έως $n-01-07 | Χριστούγεννα" ),
