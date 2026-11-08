@@ -96,7 +96,8 @@ function dgn_admin_save() {
 	$new['holidays_local'] = sanitize_textarea_field( isset( $in['holidays_local'] ) ? $in['holidays_local'] : '' );
 	$new['holidays_auto']  = empty( $in['holidays_auto'] ) ? 0 : 1;
 	$new['holidays_year']  = isset( $old['holidays_year'] ) ? (int) $old['holidays_year'] : (int) substr( dgn_school_year()[0], 0, 4 );
-	unset( $new['holidays_refreshed'] );
+	unset( $new['holidays_refreshed'], $new['holidays_eves_note'] );
+	$new['holidays_eves_done'] = 1;
 	$new['weekly_max']  = min( 5, max( 1, (int) ( isset( $in['weekly_max'] ) ? $in['weekly_max'] : 3 ) ) );
 	$new['access']      = ( isset( $in['access'] ) && in_array( $in['access'], array( 'users', 'sso' ), true ) ) ? $in['access'] : 'code';
 	$new['sso_server']  = ( isset( $in['sso_server'] ) && 'test' === $in['sso_server'] ) ? 'test' : 'prod';
@@ -259,6 +260,12 @@ function dgn_admin_tab_settings() {
 	list( , $bad )      = dgn_parse_holidays( $s['holidays'] );
 	list( , $bad_local ) = dgn_parse_holidays( $s['holidays_local'] );
 	$sy                 = (int) substr( dgn_school_year()[0], 0, 4 );
+	if ( ! empty( $s['holidays_eves_note'] ) ) {
+		$opt = get_option( DGN_OPTION );
+		unset( $opt['holidays_eves_note'] );
+		update_option( DGN_OPTION, $opt, false );
+		echo '<div class="notice notice-info inline" style="max-width:780px"><p>Προστέθηκαν οι σχολικές εορτές της 28ης Οκτωβρίου και της 25ης Μαρτίου στις πανελλαδικές αργίες.</p></div>';
+	}
 	if ( ! empty( $s['holidays_refreshed'] ) ) {
 		// Μήνυμα μία φορά, μετά την αυτόματη ενημέρωση της νέας χρονιάς.
 		$opt = get_option( DGN_OPTION );

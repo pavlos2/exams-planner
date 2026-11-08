@@ -39,6 +39,7 @@ function dgn_default_settings() {
 		'holidays_year'  => (int) substr( dgn_school_year()[0], 0, 4 ), // για ποια χρονιά συμπληρώθηκαν
 		'holidays_auto'  => 1,  // 1 = νέα συμπλήρωση αυτόματα σε κάθε νέα σχολική χρονιά
 		'holidays_local' => '', // τοπικές αργίες· «ΜΜ-ΗΗ» = κάθε χρόνο
+		'holidays_eves_done' => 1, // οι σχολικές εορτές περιλαμβάνονται ήδη (βλ. dgn_add_missing_eves())
 		'weekly_max'  => 3,
 		'access'      => 'code',   // 'code' = κοινός κωδικός, 'users' = λογαριασμοί WordPress, 'sso' = λογαριασμοί ΠΣΔ
 		'sso_service' => '',       // Διεύθυνση υπηρεσίας όπως δηλώθηκε στο ΠΣΔ (κενό = η σελίδα της εφαρμογής)
@@ -79,6 +80,19 @@ function dgn_settings() {
 		$s['holidays_year']      = $sy;
 		$s['holidays_refreshed'] = $sy; // για μήνυμα στις Ρυθμίσεις
 		$changed                 = true;
+	}
+	if ( empty( $s['holidays_eves_done'] ) ) {
+		// Μία φορά (από 1.9.84): οι σχολικές εορτές 28ης Οκτωβρίου / 25ης Μαρτίου προστίθενται
+		// στις φετινές πανελλαδικές αργίες όσων είχαν ήδη το πρόσθετο. Δεν αντικαθιστά τίποτα.
+		$s['holidays_eves_done'] = 1;
+		$changed                 = true;
+		if ( ! empty( $s['holidays_auto'] ) ) {
+			$added = dgn_add_missing_eves( $s['holidays'], (int) $s['holidays_year'] );
+			if ( null !== $added ) {
+				$s['holidays']           = $added;
+				$s['holidays_eves_note'] = 1; // μήνυμα στις Ρυθμίσεις
+			}
+		}
 	}
 	if ( $changed ) {
 		update_option( DGN_OPTION, $s, false );
@@ -462,4 +476,33 @@ function dgn_generate_code() {
 		$c[ $j ]  = $t;
 	}
 	return implode( '', $c );
+}
+
+/**
+ * Προσθέτει στο κείμενο των πανελλαδικών αργιών τις σχολικές εορτές της χρονιάς $sy που λείπουν
+ * (ελέγχεται η ημερομηνία). Οι γραμμές ταξινομούνται κατά ημερομηνία· οι υπόλοιπες μένουν όπως είναι.
+ * Επιστρέφει το νέο κείμενο, ή null αν δεν χρειάστηκε αλλαγή.
+ */
+function dgn_add_missing_eves( $text, $sy ) {
+	list( $have ) = dgn_parse_holidays( $text, $sy );
+	$lines        = '' === trim( (string) $text ) ? array() : preg_split( '/\R/u', trim( (string) $text ) );
+	$added        = false;
+	foreach ( preg_split( '/\R/u', dgn_national_holidays_text( $sy ) ) as $line ) {
+		if ( false !== mb_strpos( $line, 'Σχολική εορτή' ) && ! isset( $have[ substr( $line, 0, 10 ) ] ) ) {
+			$lines[] = $line;
+			$added   = true;
+		}
+	}
+	if ( ! $added ) {
+		return null;
+	}
+	usort(
+		$lines,
+		function ( $a, $b ) {
+			$da = preg_match( '/^\d{4}-\d{2}-\d{2}/', trim( $a ) ) ? substr( trim( $a ), 0, 10 ) : '9999';
+			$db = preg_match( '/^\d{4}-\d{2}-\d{2}/', trim( $b ) ) ? substr( trim( $b ), 0, 10 ) : '9999';
+			return strcmp( $da, $db );
+		}
+	);
+	return implode( "\n", $lines );
 }
