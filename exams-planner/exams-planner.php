@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Exams Planner
  * Description:       Δήλωση διαγωνισμάτων ανά τμήμα με αυτόματο έλεγχο κανόνων. Προσοχή: η ΔΙΑΓΡΑΦΗ του πρόσθετου σβήνει ΟΛΑ τα δεδομένα (δηλώσεις, ιστορικό, ρυθμίσεις). Η απενεργοποίηση και η αναβάθμιση όχι.
- * Version:           1.9.84
+ * Version:           1.9.85
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            5ο Γυμνάσιο Χανίων
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'DGN_VERSION', '1.9.84' );
+define( 'DGN_VERSION', '1.9.85' );
 define( 'DGN_DB_VERSION', '1' );
 define( 'DGN_FILE', __FILE__ );
 define( 'DGN_DIR', plugin_dir_path( __FILE__ ) );
@@ -39,7 +39,7 @@ require_once DGN_DIR . 'includes/sso.php';
 if ( is_admin() || wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 	require_once DGN_DIR . 'vendor/plugin-update-checker/plugin-update-checker.php';
 	$dgn_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-		'https://github.com/pavlos2/exams-planner/',
+		'https://github.com/pavtheod/exams-planner/',
 		__FILE__,
 		'exams-planner'
 	);
